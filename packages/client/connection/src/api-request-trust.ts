@@ -116,7 +116,9 @@ export function isTrustedApiRequest(request: ApiTrustRequest, trustedHosts: read
   const origin = header(request.headers, 'origin')
   if (origin === undefined) return true
   try {
-    return new URL(origin).host === hostUrl.host
+    const originUrl = new URL(origin)
+    if (originUrl.hostname !== hostUrl.hostname) return false
+    return originUrl.port === '' || originUrl.port === hostUrl.port
   } catch {
     return false
   }

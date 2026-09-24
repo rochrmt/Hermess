@@ -63,8 +63,8 @@
     - id: agent-default-model
       name: '@deepseek-ai/dsh-agent-default-model'
       config:
-        provider: deepseek-official
-        model: deepseek-v4-flash
+        provider: zai
+        model: glm-4.7-flash
 
     - id: jobs
       name: '@deepseek-ai/dsh-jobs-local'
@@ -94,6 +94,60 @@
     # document.
     - id: llm-pi-ai
       name: '@deepseek-ai/dsh-llm-pi-ai'
+      config:
+        providers:
+          zai:
+            displayName: Z.ai (direct)
+            apiKeyEnv: ZAI_API_KEY
+            api: openai-completions
+            baseURL: https://api.z.ai/api/paas/v4
+            compat:
+              supportsDeveloperRole: false
+              maxTokensField: max_tokens
+            retryPolicy:
+              mode: always
+              backoff:
+                initialDelayMs: 2000
+                maxDelayMs: 30000
+                jitterRatio: 0.2
+            models:
+              - id: glm-4.7-flash
+                name: GLM 4.7 Flash (free)
+                contextWindow: 200000
+                maxTokens: 16384
+              - id: glm-4.5-flash
+                name: GLM 4.5 Flash (free)
+                contextWindow: 128000
+                maxTokens: 16384
+              - id: glm-5.2
+                name: GLM 5.2 (paid)
+                contextWindow: 256000
+                maxTokens: 256000
+                reasoningEfforts:
+                  off:
+                  high: high
+                  max: xhigh
+          openrouter:
+            displayName: OpenRouter (fallback)
+            apiKeyEnv: OPENROUTER_API_KEY
+            api: openai-completions
+            baseURL: https://openrouter.ai/api/v1
+            compat:
+              supportsDeveloperRole: false
+              maxTokensField: max_tokens
+            models:
+              - id: z-ai/glm-5.2:free
+                name: GLM 5.2 (free)
+                contextWindow: 256000
+                maxTokens: 256000
+                reasoningEfforts:
+                  off:
+                  high: high
+                  max: xhigh
+              - id: openrouter/free
+                name: OpenRouter Free (auto-router)
+                contextWindow: 256000
+                maxTokens: 16384
 
     - id: session-persistence-jsonl
       name: '@deepseek-ai/dsh-session-persistence-jsonl'
@@ -393,29 +447,26 @@
         thresholds: [3, 5, 8]
         argumentsPreviewChars: 500
 
-    # Every mode enables the stable model-facing web_search tool. DeepSeek search
-    # resolves the same DEEPSEEK_API_KEY credential the Models page manages for
-    # chat, at each search; its Messages endpoint is separate from the
-    # chat-completions endpoint, so it takes its own base-URL override. Fetch stays
-    # disabled and no fetch provider is mounted: that provider defers SSRF
-    # protection and the model would choose the request target. Search is a full
-    # auxiliary model request with server-side retrieval, so this shipped DeepSeek
-    # route gets 60s while the provider-neutral tool default remains 30s.
+    # Every mode enables the stable model-facing web_search tool. SearxNG is a
+    # free meta-search engine that aggregates Google/Bing/DuckDuckGo results
+    # without requiring an API key. Fetch stays enabled for web_fetch.
     - id: web
       name: '@deepseek-ai/dsh-web'
       config:
-        searchProvider: deepseek-official
+        searchProvider: searxng
 
-    - id: web-search-deepseek
-      name: '@deepseek-ai/dsh-web-search-deepseek'
+    - id: web-search-searxng
+      name: '@deepseek-ai/dsh-web-search-searxng'
       config:
-        apiKeyEnv: DEEPSEEK_API_KEY
+        baseURL: http://localhost:8888
+        numResults: 10
 
     - id: tool-web
       name: '@deepseek-ai/dsh-tool-web'
       config:
-        fetch: false
+        fetch: true
         searchTimeoutMs: 60000
+        fetchTimeoutMs: 60000
 
     # ── rows every mode mounts, whose values each overlay may state ──────────────
 
